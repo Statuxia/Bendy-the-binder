@@ -29,7 +29,5 @@ https://github.com/Statuxia/binder
 
 
 Скачать через github: https://github.com/Statuxia/binder/raw/main/Binder.zip
-
 Скачать через MEGA: https://mega.nz/file/EQwmwLTb#cC99WS7iuwjRMBjl73-KRnrXrFel9XK6QIr6cOCnJcA
-
 VT: https://www.virustotal.com/gui/file/7e77a4642c1523334e572b1140da4a73a8c5631457d18ca64491d504bf27f6d5/detection
