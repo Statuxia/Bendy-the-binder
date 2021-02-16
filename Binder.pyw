@@ -53,16 +53,31 @@ def clicked():
         sleep(0.1)
     window.after(50, clicked)
 
+entry = [".!entry", ".!entry8", ".!entry9", ".!entry10", ".!entry11", ".!entry12", ".!entry13"]
 
+def show(event):
+    if event.keysym != "Return":
+        for e in entry:
+            if str(window.focus_get()) == e:
+                lenn = len(window.focus_get().get())
+                window.focus_get().delete(0, lenn)
+                if "_L" in event.keysym and event.keysym[-1] == "L":
+                    window.focus_get().insert(1, event.keysym[0:-2])
+                elif "_R" in event.keysym and event.keysym[-1] == "R":
+                    window.focus_get().insert(1, event.keysym[0:-2])
+                else:
+                    window.focus_get().insert(1, event.keysym)
 
 window = Tk()
 window.title("Command Binder")
 window.geometry("410x240")
 window.resizable(width=False, height=False)
+window.bind_all("<Key>", show)
 try:
     window.iconbitmap("eraser.ico")
 except:
     pass
+
 
 line = Label(window, text="──────────────────────────────────────────────────────")
 line.place(x=-10, y=40)
