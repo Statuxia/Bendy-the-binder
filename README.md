@@ -20,7 +20,7 @@
 > Скачать через MEGA: https://mega.nz/file/IM4VUSzR#gDmjNdHdo0t-A9gYXt2fWp2EKIApA0g52uvrceb_zCo
 > VT: https://www.virustotal.com/gui/file/8788719d977bb8564dc82d5ae37ff7c7bc3134187b1f16560b05d2cbb86606db/detection
 
-*p.s*
+*p.s.*
 
 Если не хочешь качать exe'шник, всегда можешь скомпилировать исходник :)
 
