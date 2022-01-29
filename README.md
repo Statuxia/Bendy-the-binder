@@ -10,7 +10,7 @@
 ! Программа работает ТОЛЬКО от имени администратора (чтобы не было багов).
 
 **Ссылки**
-> Скачать через github: https://github.com/Statuxia/bendy/raw/main/bendy.zip
+> Скачать через github: https://github.com/Statuxia/Bendy-the-binder/raw/main/bendy.zip
 
 > Скачать через MEGA: https://mega.nz/file/4cYgQLDI#zmT2NdMB1jofYD2za7KigqqlzowwwvGOHUV-FSqA-DE
 
@@ -21,4 +21,4 @@
 Если не хочешь качать exe'шник, всегда можешь скомпилировать исходник :)
 
 Скачиваешь Python, в консоли пишешь pip install keyboard и весь функционал программы у тебя в руках.
-https://github.com/Statuxia/bendy
+https://github.com/Statuxia/Bendy-the-binder
