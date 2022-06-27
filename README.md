@@ -24,8 +24,6 @@
 > `Проверено на Windows 10`
 
 ## Ссылки
-> GitHub: https://github.com/Statuxia/Bendy-the-binder/raw/main/bendy.zip
+> Download: https://github.com/Statuxia/Bendy-the-binder/raw/main/Bendy-the-binder.rar
 >
-> MEGA: https://mega.nz/file/4cYgQLDI#zmT2NdMB1jofYD2za7KigqqlzowwwvGOHUV-FSqA-DE
->
-> VirusTotal: https://www.virustotal.com/gui/file/bb4a8f6592ff9cd62e2b3dfa1da7e0919a99e75ab95d3b81ca3679f9e103bf1c?nocache=1
+> VirusTotal: https://www.virustotal.com/gui/file/a0c5c67f3935b2ab64a90304b816dda5535b39857d43583d09c386a578094ed9?nocache=1
