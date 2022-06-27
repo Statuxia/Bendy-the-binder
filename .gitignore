@@ -1,0 +1,7 @@
+/bendy_config.json
+/bendy.spec
+
+/.idea/
+/__pycache__/
+/build/
+/dist/
