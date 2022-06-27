@@ -1,53 +1,53 @@
-import ctypes
 import json
-import keyboard
-import os
-from string import punctuation
 import time
-from tkinter import *
-from tkinter import messagebox
 from ctypes import windll
+from string import punctuation
+from tkinter import *
+
+import keyboard
+
+from utils import *
+from visual import *
+
+
+# Moving part
+def start_move(event):
+    global x, y
+    x = event.x
+    y = event.y
+
+
+# Moving part
+def stop_move(event):
+    del event
+    global x, y
+    x = None
+    y = None
 
 
 class Bendy:
 
     def __init__(self):
+        self._rus_chars = u"ё!\"№;%:?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,"
+        self._eng_chars = u"~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
+        self._trans_table = dict(zip(self._rus_chars, self._eng_chars))
+        self.checkEnterVar = None
+        self.checkOpenChatVar = None
         self.Tk = Tk()
 
-        if not self.is_admin():
+        if not is_admin():
             self.Tk.withdraw()
-            messagebox.showerror('Bendy the binder', 'Ошибка. Программа запущена не от имени администратора.')
-            return
+            messagebox.showwarning('Bendy the binder', 'Предупреждение!\n'
+                                                       'Программа запущена не от имени администратора.\n'
+                                                       'Программа может функционировать некорректно.')
 
         self.GWL_EXSTYLE = -20
         self.WS_EX_APPWINDOW = 0x00040000
         self.WS_EX_TOOLWINDOW = 0x00000080
 
-        self.var_send = False
-        self.var_chat = False
-
-        self.config = {"auto_send": True,
-                       "auto_chat": False,
-                       "auto_send_button": "Enter",
-                       "auto_chat_button": "t",
-                       "command_and_hotkey": [
-                           [
-                               "",
-                               ""
-                           ]
-                       ]
-                       }
-        self.check = ["auto_send", "auto_chat", "auto_send_button", "auto_chat_button", "command_and_hotkey"]
-        try:
-            with open("bendy_config.json", "r") as file:
-                config_info = json.load(file)
-                for i in self.check:
-                    if not config_info.get(i) and config_info.get(i) != False:
-                        break
-                    if i == self.check[-1]:
-                        self.config = config_info
-        except:
-            pass
+        self.config = get_config(self.Tk)
+        self.var_chat = self.config["auto_chat"]
+        self.var_send = self.config["auto_send"]
 
         self.Tk.overrideredirect(True)
         self.Tk.config(bg="gray13")
@@ -56,103 +56,18 @@ class Bendy:
 
         try:
             self.Tk.iconbitmap("icon.ico")
-        except:
+        except TclError:
             pass
 
-        # ==== BORDER ====
-        self.Tk.borderFrame = Frame(width=450, height=20, bg="gray20")
-        self.Tk.borderFrame.pack_propagate(False)
-        self.Tk.borderFrame.pack(side=TOP)
-
-        self.Tk.helloText = Label(self.Tk.borderFrame, text="Bendy the binder",
-                                  bg="gray20", fg="orange")
-        self.Tk.helloText.pack(side=LEFT)
-
-        self.Tk.exit_button = Button(self.Tk.borderFrame, text="  X  ", command=self.exit,
-                                     bd=0, bg="gray20", fg="orange")
-        self.Tk.exit_button.pack(side=RIGHT)
-        self.Tk.exit_button.bind("<Enter>", self.on_enter_exit)
-        self.Tk.exit_button.bind("<Leave>", self.on_leave_exit)
-
-        self.Tk.borderFrame.bind("<Button-1>", self.start_move)
-        self.Tk.borderFrame.bind("<ButtonRelease-1>", self.stop_move)
-        self.Tk.borderFrame.bind("<B1-Motion>", self.moving)
-        self.Tk.borderFrame.bind("<Map>", self.frame_mapped)
-
-        # ==== RIGHT FRAME ====
-        self.Tk.rightFrame = Frame(width=350, height=270, bg="gray13")
-        self.Tk.rightFrame.pack_propagate(False)
-        self.Tk.rightFrame.pack(side=RIGHT)
-
-        # ==== LEFT FRAME ====
-        self.Tk.leftFrame = Frame(width=100, height=270, bg="gray10")
-        self.Tk.leftFrame.pack_propagate(False)
-        self.Tk.leftFrame.pack(side=LEFT)
-
-        self.Tk.add = Button(self.Tk.leftFrame, text="ADD BIND",
-                             bd=0, bg="gray10", fg="orange", height=2, width=20, command=self.create_bendy)
-        self.Tk.add.pack(side=TOP)
-        self.Tk.add.bind("<Enter>", self.on_enter_left)
-        self.Tk.add.bind("<Leave>", self.on_leave_left)
-
-        self.Tk.dell = Button(self.Tk.leftFrame, text="DELETE BIND",
-                              bd=0, bg="gray10", fg="orange", height=2, width=20, command=self.delete_bendy)
-        self.Tk.dell.pack(side=TOP)
-        self.Tk.dell.bind("<Enter>", self.on_enter_left)
-        self.Tk.dell.bind("<Leave>", self.on_leave_left)
-
-        self.checkEnterVar = BooleanVar()
-        self.checkEnterVar.set(self.config.get("auto_send"))
-        self.Tk.checkEnter = Checkbutton(self.Tk.leftFrame, text="Auto send".upper(), variable=self.checkEnterVar,
-                                         onvalue=1, offvalue=0, command=self.change_var1,
-                                         bg="gray10", fg="orange", selectcolor="gray10", height=2, width=20)
-        self.Tk.checkEnter.pack(side=TOP)
-        self.Tk.checkEnter.bind("<Enter>", self.on_enter_left)
-        self.Tk.checkEnter.bind("<Leave>", self.on_leave_left)
-
-        self.Tk.EnterBind = Entry(self.Tk.leftFrame, width=20, bg="gray10", fg="orange", bd=1)
-        self.Tk.EnterBind.insert(0, self.config.get("auto_send_button"))
-        self.Tk.EnterBind.pack(side=TOP, pady=7, padx=10)
-
-        self.checkOpenChatVar = BooleanVar()
-        self.checkOpenChatVar.set(self.config.get("auto_chat"))
-        self.Tk.checkOpenChat = Checkbutton(self.Tk.leftFrame, text="Auto chat".upper(),
-                                            variable=self.checkOpenChatVar,
-                                            onvalue=1, offvalue=0, command=self.change_var2,
-                                            bg="gray10", fg="orange", selectcolor="gray10", height=2, width=20)
-        self.Tk.checkOpenChat.pack(side=TOP)
-        self.Tk.checkOpenChat.bind("<Enter>", self.on_enter_left)
-        self.Tk.checkOpenChat.bind("<Leave>", self.on_leave_left)
-
-        self.Tk.OpenChatBind = Entry(self.Tk.leftFrame, width=20, bg="gray10", fg="orange", bd=1)
-        self.Tk.OpenChatBind.insert(0, self.config.get("auto_chat_button"))
-        self.Tk.OpenChatBind.pack(side=TOP, pady=8, padx=10)
-
-        self.Tk.save = Button(self.Tk.leftFrame, text="SAVE",
-                              bd=0, bg="gray10", fg="orange", height=2, width=20, command=self.save)
-        self.Tk.save.pack(side=TOP)
-        self.Tk.save.bind("<Enter>", self.on_enter_left)
-        self.Tk.save.bind("<Leave>", self.on_leave_left)
-
-        for conf in self.config.get("command_and_hotkey"):
-            self.create_bendy(conf)
-
-        self.Tk.bind_all("<Key>", self.button_chat)
-        self._rus_chars = u"ё!\"№;%:?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,"
-        self._eng_chars = u"~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
-        self._trans_table = dict(zip(self._rus_chars, self._eng_chars))
+        # Functional part
+        self.border()
+        self.right_frame()
+        self.left_frame()
 
         self.Tk.after(10, self.start_bendy())
 
         self.Tk.after(10, self.set_appwindow)
         self.Tk.mainloop()
-
-    # Check before start
-    def is_admin(self):
-        try:
-            return os.getuid() == 0
-        except AttributeError:
-            return ctypes.windll.shell32.IsUserAnAdmin() != 0
 
     # Make Icon in taskbar
     def set_appwindow(self):
@@ -167,28 +82,12 @@ class Bendy:
 
     # Checkbox changer
     def change_var1(self):
-        if not self.var_send:
-            self.var_send = True
-        else:
-            self.var_send = False
+        self.var_send = not self.var_send
 
     def change_var2(self):
-        if not self.var_chat:
-            self.var_chat = True
-        else:
-            self.var_chat = False
+        self.var_chat = not self.var_chat
 
     # Moving part
-    def start_move(self, event):
-        global x, y
-        x = event.x
-        y = event.y
-
-    def stop_move(self, event):
-        global x, y
-        x = None
-        y = None
-
     def moving(self, event):
         global x, y
         x_ = (event.x_root - x)
@@ -196,30 +95,90 @@ class Bendy:
         self.Tk.geometry("+%s+%s" % (x_, y_))
 
     def frame_mapped(self, e):
+        del e
         self.Tk.update_idletasks()
         self.Tk.overrideredirect(True)
         self.Tk.state('normal')
 
-    # Visual part
-    def on_enter_left(self, e):
-        e.widget['background'] = 'gray14'
-        e.widget['foreground'] = 'white'
-        e.widget['activebackground'] = 'gray14'
-        e.widget['activeforeground'] = 'white'
+    def border(self):
+        self.Tk.borderFrame = Frame(width=450, height=20, bg="gray20")
+        self.Tk.borderFrame.pack_propagate(False)
+        self.Tk.borderFrame.pack(side=TOP)
 
-    def on_leave_left(self, e):
-        e.widget['background'] = 'gray10'
-        e.widget['foreground'] = 'orange'
+        self.Tk.helloText = Label(self.Tk.borderFrame, text="BENDY THE BINDER",
+                                  bg="gray20", fg="orange")
+        self.Tk.helloText.pack(side=LEFT)
 
-    def on_enter_exit(self, e):
-        e.widget['background'] = 'red'
-        e.widget['foreground'] = 'white'
-        e.widget['activebackground'] = 'red'
-        e.widget['activeforeground'] = 'white'
+        self.Tk.exit_button = Button(self.Tk.borderFrame, text="  X  ", command=self.exit,
+                                     bd=0, bg="gray20", fg="orange")
+        self.Tk.exit_button.pack(side=RIGHT)
+        self.Tk.exit_button.bind("<Enter>", on_enter_exit)
+        self.Tk.exit_button.bind("<Leave>", on_leave_exit)
 
-    def on_leave_exit(self, e):
-        e.widget['background'] = 'gray20'
-        e.widget['foreground'] = 'orange'
+        self.Tk.borderFrame.bind("<Button-1>", start_move)
+        self.Tk.borderFrame.bind("<ButtonRelease-1>", stop_move)
+        self.Tk.borderFrame.bind("<B1-Motion>", self.moving)
+        self.Tk.borderFrame.bind("<Map>", self.frame_mapped)
+
+    def left_frame(self):
+        self.Tk.leftFrame = Frame(width=100, height=270, bg="gray10")
+        self.Tk.leftFrame.pack_propagate(False)
+        self.Tk.leftFrame.pack(side=LEFT)
+
+        self.Tk.add = Button(self.Tk.leftFrame, text="ADD BIND",
+                             bd=0, bg="gray10", fg="orange", height=2, width=20, command=self.create_bendy)
+        self.Tk.add.pack(side=TOP)
+        self.Tk.add.bind("<Enter>", on_enter_left)
+        self.Tk.add.bind("<Leave>", on_leave_left)
+
+        self.Tk.dell = Button(self.Tk.leftFrame, text="DELETE BIND",
+                              bd=0, bg="gray10", fg="orange", height=2, width=20, command=self.delete_bendy)
+        self.Tk.dell.pack(side=TOP)
+        self.Tk.dell.bind("<Enter>", on_enter_left)
+        self.Tk.dell.bind("<Leave>", on_leave_left)
+
+        self.checkEnterVar = BooleanVar()
+        self.checkEnterVar.set(self.config.get("auto_send"))
+        self.Tk.checkEnter = Checkbutton(self.Tk.leftFrame, text="Auto send".upper(), variable=self.checkEnterVar,
+                                         onvalue=1, offvalue=0, command=self.change_var1,
+                                         bg="gray10", fg="orange", selectcolor="gray10", height=2, width=20)
+        self.Tk.checkEnter.pack(side=TOP)
+        self.Tk.checkEnter.bind("<Enter>", on_enter_left)
+        self.Tk.checkEnter.bind("<Leave>", on_leave_left)
+
+        self.Tk.EnterBind = Entry(self.Tk.leftFrame, width=20, bg="gray10", fg="orange", bd=1)
+        self.Tk.EnterBind.insert(0, self.config.get("auto_send_button"))
+        self.Tk.EnterBind.pack(side=TOP, pady=7, padx=10)
+
+        self.checkOpenChatVar = BooleanVar()
+        self.checkOpenChatVar.set(self.config.get("auto_chat"))
+        self.Tk.checkOpenChat = Checkbutton(self.Tk.leftFrame, text="Auto chat".upper(),
+                                            variable=self.checkOpenChatVar,
+                                            onvalue=1, offvalue=0, command=self.change_var2,
+                                            bg="gray10", fg="orange", selectcolor="gray10", height=2, width=20)
+        self.Tk.checkOpenChat.pack(side=TOP)
+        self.Tk.checkOpenChat.bind("<Enter>", on_enter_left)
+        self.Tk.checkOpenChat.bind("<Leave>", on_leave_left)
+
+        self.Tk.OpenChatBind = Entry(self.Tk.leftFrame, width=20, bg="gray10", fg="orange", bd=1)
+        self.Tk.OpenChatBind.insert(0, self.config.get("auto_chat_button"))
+        self.Tk.OpenChatBind.pack(side=TOP, pady=8, padx=10)
+
+        self.Tk.save = Button(self.Tk.leftFrame, text="SAVE",
+                              bd=0, bg="gray10", fg="orange", height=2, width=20, command=self.save)
+        self.Tk.save.pack(side=TOP)
+        self.Tk.save.bind("<Enter>", on_enter_left)
+        self.Tk.save.bind("<Leave>", on_leave_left)
+
+        for conf in self.config.get("command_and_hotkey"):
+            self.create_bendy(conf)
+
+        self.Tk.bind_all("<Key>", self.button_chat)
+
+    def right_frame(self):
+        self.Tk.rightFrame = Frame(width=350, height=270, bg="gray13")
+        self.Tk.rightFrame.pack_propagate(False)
+        self.Tk.rightFrame.pack(side=RIGHT)
 
     # Buttons
     def create_bendy(self, conf=None):
@@ -229,13 +188,13 @@ class Bendy:
         self.Tk.bendy = Frame(self.Tk.rightFrame, width=10, bg=f"gray13")
         self.Tk.bendy.pack(side=TOP)
 
-        self.Tk.bendy.commandtext = Label(self.Tk.bendy, text="Command:", height=1)
+        self.Tk.bendy.commandtext = Label(self.Tk.bendy, text="COMMAND:", height=1)
         self.Tk.bendy.commandtext.pack(side=LEFT, pady=6)
         self.Tk.bendy.command = Entry(self.Tk.bendy)
         self.Tk.bendy.command.pack(side=LEFT, pady=6, padx=7.5)
         self.Tk.bendy.command.insert(0, conf[0])
 
-        self.Tk.bendy.hotkeytext = Label(self.Tk.bendy, text="Hotkey:")
+        self.Tk.bendy.hotkeytext = Label(self.Tk.bendy, text="HOTKEY:")
         self.Tk.bendy.hotkeytext.pack(side=LEFT)
         self.Tk.bendy.hotkey = Entry(self.Tk.bendy, width=12)
         self.Tk.bendy.hotkey.pack(side=LEFT, padx=7.5)
@@ -294,16 +253,14 @@ class Bendy:
                   "auto_chat_button": "t",
                   "command_and_hotkey": []
                   }
-
-        auto_send = 0
+        auto_send = False
         for widget in self.Tk.leftFrame.winfo_children():
             if isinstance(widget, Entry):
                 if not auto_send:
                     output["auto_send_button"] = widget.get()
-                    auto_send = 1
+                    auto_send = True
                 else:
                     output["auto_chat_button"] = widget.get()
-                    auto_send = 2
 
         widgets = []
         for bendy_widget in self.Tk.rightFrame.winfo_children():
@@ -314,8 +271,12 @@ class Bendy:
         for i in range(0, len(widgets), 2):
             output["command_and_hotkey"].append([widgets[i], widgets[i + 1]])
 
-        with open("bendy_config.json", "w") as file:
-            json.dump(output, file, indent=4)
+        try:
+            with open("bendy_config.json", "w") as file:
+                json.dump(output, file, indent=4)
+        except PermissionError:
+            self.Tk.withdraw()
+            messagebox.showerror('Bendy the binder', 'Ошибка! Недостаточно прав для сохранения конфига.')
 
     def exit(self):
         self.Tk.destroy()
@@ -357,14 +318,10 @@ class Bendy:
                         if self.var_send:
                             keyboard.send(output.get("auto_send_button"))
                             time.sleep(0.1)
-                except:
+                except ValueError:
                     continue
         self.Tk.after(10, self.start_bendy)
 
 
-def run():
-    Bendy()
-
-
 if __name__ == '__main__':
-    run()
+    Bendy()
