@@ -6,49 +6,39 @@ from tkinter import *
 
 import keyboard
 
-from utils import *
-from visual import *
-
-
-# Moving part
-def start_move(event):
-    global x, y
-    x = event.x
-    y = event.y
-
-
-# Moving part
-def stop_move(event):
-    del event
-    global x, y
-    x = None
-    y = None
+from tools.utils import *
+from tools.visual import *
 
 
 class Bendy:
 
     def __init__(self):
-        self._rus_chars = u"ё!\"№;%:?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,"
-        self._eng_chars = u"~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
-        self._trans_table = dict(zip(self._rus_chars, self._eng_chars))
-        self.checkEnterVar = None
-        self.checkOpenChatVar = None
+        # Создание экземпляра класса.
         self.Tk = Tk()
 
+        # Предупреждение пользователя о запуске программы не от имени администратора.
         if not is_admin():
             self.Tk.withdraw()
             messagebox.showwarning('Bendy the binder', 'Предупреждение!\n'
                                                        'Программа запущена не от имени администратора.\n'
                                                        'Программа может функционировать некорректно.')
 
-        self.GWL_EXSTYLE = -20
-        self.WS_EX_APPWINDOW = 0x00040000
-        self.WS_EX_TOOLWINDOW = 0x00000080
+        # Создание словаря для смены русских символов для горячих клавиш.
+        self._rus_chars = u"ё!\"№;%:?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,"
+        self._eng_chars = u"~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
+        self._trans_table = dict(zip(self._rus_chars, self._eng_chars))
+        del self._eng_chars
 
-        self.config = get_config(self.Tk)
-        self.var_chat = self.config["auto_chat"]
-        self.var_send = self.config["auto_send"]
+        # Создание переменных для работы чек-боксов.
+        self.checkEnterVar = None
+        self.checkOpenChatVar = None
 
+        # Получение конфиг-файла для преднастройки.
+        self.config: dict = get_config(self.Tk)
+        self.var_chat: bool = self.config["auto_chat"]
+        self.var_send: bool = self.config["auto_send"]
+
+        # Начальная настройка приложения.
         self.Tk.overrideredirect(True)
         self.Tk.config(bg="gray13")
         self.Tk.resizable(width=False, height=False)
@@ -59,35 +49,47 @@ class Bendy:
         except TclError:
             pass
 
-        # Functional part
-        self.border()
+        # Инициализация внутренних частей программы.
+        self.top_menu()
         self.right_frame()
         self.left_frame()
-
-        self.Tk.after(10, self.start_bendy())
+        self.Tk.after(10, self.read_bendy())
 
         self.Tk.after(10, self.set_appwindow)
         self.Tk.mainloop()
 
-    # Make Icon in taskbar
+    # Показ иконки приложения на панели задач. (Windows only)
     def set_appwindow(self):
         hwnd = windll.user32.GetParent(self.Tk.winfo_id())
-        style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
-        style = style & ~self.WS_EX_TOOLWINDOW
-        style = style | self.WS_EX_APPWINDOW
-        windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, style)
+        style = windll.user32.GetWindowLongW(hwnd, -20)
+        style = style & ~0x00000080
+        style = style | 0x00040000
+        windll.user32.SetWindowLongW(hwnd, -20, style)
 
         self.Tk.wm_withdraw()
         self.Tk.after(10, lambda: self.Tk.wm_deiconify())
 
-    # Checkbox changer
+    # Изменение состояния чек-боксов.
     def change_var1(self):
         self.var_send = not self.var_send
 
     def change_var2(self):
         self.var_chat = not self.var_chat
 
-    # Moving part
+    # Функции для перемещения окна.
+    @staticmethod
+    def start_move(event):
+        global x, y
+        x = event.x
+        y = event.y
+
+    @staticmethod
+    def stop_move(event):
+        del event
+        global x, y
+        x = None
+        y = None
+
     def moving(self, event):
         global x, y
         x_ = (event.x_root - x)
@@ -100,26 +102,29 @@ class Bendy:
         self.Tk.overrideredirect(True)
         self.Tk.state('normal')
 
-    def border(self):
-        self.Tk.borderFrame = Frame(width=450, height=20, bg="gray20")
-        self.Tk.borderFrame.pack_propagate(False)
-        self.Tk.borderFrame.pack(side=TOP)
+    # Верхняя панель программы.
+    def top_menu(self):
+        self.Tk.menuFrame = Frame(width=450, height=20, bg="gray20")
+        self.Tk.menuFrame.pack_propagate(False)
+        self.Tk.menuFrame.pack(side=TOP)
 
-        self.Tk.helloText = Label(self.Tk.borderFrame, text="BENDY THE BINDER",
+        self.Tk.helloText = Label(self.Tk.menuFrame, text="BENDY THE BINDER",
                                   bg="gray20", fg="orange")
         self.Tk.helloText.pack(side=LEFT)
 
-        self.Tk.exit_button = Button(self.Tk.borderFrame, text="  X  ", command=self.exit,
-                                     bd=0, bg="gray20", fg="orange")
-        self.Tk.exit_button.pack(side=RIGHT)
-        self.Tk.exit_button.bind("<Enter>", on_enter_exit)
-        self.Tk.exit_button.bind("<Leave>", on_leave_exit)
+        self.Tk.exitButton = Button(self.Tk.menuFrame, text="  X  ", command=self.exit,
+                                    bd=0, bg="gray20", fg="orange")
+        self.Tk.exitButton.pack(side=RIGHT)
+        self.Tk.exitButton.bind("<Enter>", on_enter_exit)
+        self.Tk.exitButton.bind("<Leave>", on_leave_exit)
 
-        self.Tk.borderFrame.bind("<Button-1>", start_move)
-        self.Tk.borderFrame.bind("<ButtonRelease-1>", stop_move)
-        self.Tk.borderFrame.bind("<B1-Motion>", self.moving)
-        self.Tk.borderFrame.bind("<Map>", self.frame_mapped)
+        for frame in [self.Tk.menuFrame, self.Tk.helloText]:
+            frame.bind("<Button-1>", self.start_move)
+            frame.bind("<ButtonRelease-1>", self.stop_move)
+            frame.bind("<B1-Motion>", self.moving)
+            frame.bind("<Map>", self.frame_mapped)
 
+    # Левая панель программы с функциональными инструментами.
     def left_frame(self):
         self.Tk.leftFrame = Frame(width=100, height=270, bg="gray10")
         self.Tk.leftFrame.pack_propagate(False)
@@ -139,7 +144,7 @@ class Bendy:
 
         self.checkEnterVar = BooleanVar()
         self.checkEnterVar.set(self.config.get("auto_send"))
-        self.Tk.checkEnter = Checkbutton(self.Tk.leftFrame, text="Auto send".upper(), variable=self.checkEnterVar,
+        self.Tk.checkEnter = Checkbutton(self.Tk.leftFrame, text="AUTO SEND", variable=self.checkEnterVar,
                                          onvalue=1, offvalue=0, command=self.change_var1,
                                          bg="gray10", fg="orange", selectcolor="gray10", height=2, width=20)
         self.Tk.checkEnter.pack(side=TOP)
@@ -152,7 +157,7 @@ class Bendy:
 
         self.checkOpenChatVar = BooleanVar()
         self.checkOpenChatVar.set(self.config.get("auto_chat"))
-        self.Tk.checkOpenChat = Checkbutton(self.Tk.leftFrame, text="Auto chat".upper(),
+        self.Tk.checkOpenChat = Checkbutton(self.Tk.leftFrame, text="AUTO CHAT",
                                             variable=self.checkOpenChatVar,
                                             onvalue=1, offvalue=0, command=self.change_var2,
                                             bg="gray10", fg="orange", selectcolor="gray10", height=2, width=20)
@@ -175,13 +180,14 @@ class Bendy:
 
         self.Tk.bind_all("<Key>", self.button_chat)
 
+    # Часть с биндами. Изначально пустая. Добавление проводится через create_bendy.
     def right_frame(self):
         self.Tk.rightFrame = Frame(width=350, height=270, bg="gray13")
         self.Tk.rightFrame.pack_propagate(False)
         self.Tk.rightFrame.pack(side=RIGHT)
 
-    # Buttons
-    def create_bendy(self, conf=None):
+    # Добавление новых биндов.
+    def create_bendy(self, conf: dict = None):
         if conf is None:
             conf = ["", ""]
 
@@ -209,12 +215,14 @@ class Bendy:
             self.Tk.rightFrame.config(height=round(33.75 * (len(self.Tk.rightFrame.winfo_children()))))
             self.Tk.leftFrame.config(height=round(33.75 * (len(self.Tk.rightFrame.winfo_children()))))
 
+    # Удаление последнего бинда.
     def delete_bendy(self):
         if len(self.Tk.rightFrame.winfo_children()) > 8:
             self.Tk.rightFrame.winfo_children()[::-1][0].destroy()
             self.Tk.rightFrame.config(height=round(33.75 * (len(self.Tk.rightFrame.winfo_children()))))
             self.Tk.leftFrame.config(height=round(33.75 * (len(self.Tk.rightFrame.winfo_children()))))
 
+    # Запись горячей клавиши.
     def button_chat(self, event):
         send_button = None
 
@@ -240,12 +248,14 @@ class Bendy:
                     event.keysym = send_button.get()[-1]
                 elif send_button.get()[-1] in self._rus_chars:
                     event.keysym = self._trans_table.get(send_button.get()[-1])
-            event.keysym = event.keysym.replace("_L", "").replace("_R",
-                                                                  "") if "Lock" not in event.keysym else event.keysym
+            for s in ["_L", "_R"]:
+                event.keysym = event.keysym[:-2] if event.keysym[-2:] == s else event.keysym
+            event.keysym = event.keysym.replace("Return", "Enter")
             send_button.delete(0, len(send_button.get()))
             if event.keysym != "BackSpace":
                 send_button.insert(1, event.keysym)
 
+    # Сохранение настроек пользователя в конфиг.
     def save(self):
         output = {"auto_send": self.var_send,
                   "auto_chat": self.var_chat,
@@ -278,11 +288,12 @@ class Bendy:
             self.Tk.withdraw()
             messagebox.showerror('Bendy the binder', 'Ошибка! Недостаточно прав для сохранения конфига.')
 
+    # Закрытие программы.
     def exit(self):
         self.Tk.destroy()
 
-    # Start
-    def start_bendy(self):
+    # Запуск постоянного цикла для чтения биндов и последующего выполнения.
+    def read_bendy(self):
         output = {"auto_send": self.var_send,
                   "auto_chat": self.var_chat,
                   "auto_send_button": "Enter",
@@ -320,7 +331,7 @@ class Bendy:
                             time.sleep(0.1)
                 except ValueError:
                     continue
-        self.Tk.after(10, self.start_bendy)
+        self.Tk.after(10, self.read_bendy)
 
 
 if __name__ == '__main__':
